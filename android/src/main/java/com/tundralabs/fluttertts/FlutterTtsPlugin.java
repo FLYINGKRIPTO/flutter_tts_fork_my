@@ -38,6 +38,7 @@ public class FlutterTtsPlugin implements MethodCallHandler {
     Bundle bundle;
     private int silencems;
     private static final String SILENCE_PREFIX = "SIL_";
+    private final HashMap<String, String> utterances = new HashMap<>();
 
     /**
      * Plugin registration.
@@ -58,14 +59,33 @@ public class FlutterTtsPlugin implements MethodCallHandler {
                 @Override
                 public void onStart(String utteranceId) {
                     invokeMethod("speak.onStart", true);
+                    if (Build.VERSION.SDK_INT < 26) {
+                        this.triggerProgress(utteranceId, 0, utterances.get(utteranceId).length());
+                    }
                 }
 
                 @Override
                 public void onDone(String utteranceId) {
                     if (utteranceId != null && utteranceId.startsWith(SILENCE_PREFIX)) return;
                     invokeMethod("speak.onComplete", true);
+                    utterances.remove(utteranceId);
                 }
 
+                private void triggerProgress(String utteranceId, int startAt, int endAt) {
+                    final String words = utterances.get(utteranceId);
+                    final HashMap<String, String> data = new HashMap<>();
+                    data.put("string", words);
+                    data.put("start", Integer.toString(startAt));
+                    data.put("end", Integer.toString(endAt));
+                    data.put("word", words.substring(startAt, endAt));
+                    invokeMethod("speak.onProgress", data);
+                }
+                // only valid on android 26 and higher
+                @Override
+                public void onRangeStart(String utteranceId, int startAt, int endAt, int frame) {
+                    super.onRangeStart(utteranceId, startAt, endAt, frame);
+                    this.triggerProgress(utteranceId, startAt, endAt);
+                }
                 @Override
                 @Deprecated
                 public void onError(String utteranceId) {
@@ -252,6 +272,7 @@ public class FlutterTtsPlugin implements MethodCallHandler {
 
     private void speak(String text, Integer mode) {
         uuid = UUID.randomUUID().toString();
+        utterances.put(uuid, text);
         if (silencems > 0) {
             if (mode == 0) {
                 tts.playSilentUtterance(silencems, TextToSpeech.QUEUE_ADD, SILENCE_PREFIX);
