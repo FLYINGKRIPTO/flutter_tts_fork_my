@@ -30,7 +30,7 @@ class _MyAppState extends State<MyApp> {
   int paragraphListLength = 0;
 
   String _platformVersion = 'Unknown';
-  final String _newVoiceText = getArticle();
+  String _newVoiceText = getArticle();
   int newParaFromIndex;
 
   TtsState ttsState = TtsState.stopped;
@@ -38,6 +38,8 @@ class _MyAppState extends State<MyApp> {
   get isPlaying => ttsState == TtsState.playing;
 
   get isStopped => ttsState == TtsState.stopped;
+
+  bool stopIsClicked = false;
 
   @override
   initState() {
@@ -88,21 +90,19 @@ class _MyAppState extends State<MyApp> {
       });
     });
 
-
-    flutterTts.setProgressHandler((String words, int start, int end, String word) {
+    flutterTts
+        .setProgressHandler((String words, int start, int end, String word) {
       setState(() {
         _platformVersion = word;
       });
       ttsIsAtWord = word;
       ttsIsAtIndexStart = start;
       ttsIsAtIndexEnd = end;
-    //  print('PROGRESS: $word => $start - $end');
+      //  print('PROGRESS: $word => $start - $end');
     });
   }
 
-  initTts() {
-
-  }
+  initTts() {}
 
   Future _getLanguages() async {
     languages = await flutterTts.getLanguages;
@@ -115,53 +115,65 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future _speak() async {
-    debugPrint(' TTS SPEAK $ttsIsAtWord $ttsIsAtIndexStart $ttsIsAtIndexEnd $newParaFromIndex ');
+    debugPrint(
+        ' TTS SPEAK $ttsIsAtWord $ttsIsAtIndexStart $ttsIsAtIndexEnd $newParaFromIndex ');
     if (_newVoiceText != null) {
       if (_newVoiceText.isNotEmpty) {
         /// this logic will work when pause is clicked and again play is clicked
-        if(ttsIsAtWord != null && ttsIsAtIndexStart != null && ttsIsAtIndexEnd != null){
+        if (ttsIsAtWord != null &&
+            ttsIsAtIndexStart != null &&
+            ttsIsAtIndexEnd != null && stopIsClicked == false ) {
           newParaFromIndex = _newVoiceText.indexOf(ttsIsAtWord ?? "");
           debugPrint('$newParaFromIndex');
           paragraphList = _newVoiceText.substring(newParaFromIndex).split(".");
-          for ( var i = 0; i < paragraphList.length; i++) {
-            var result =  flutterTts.speak(paragraphList[i],queue: QUEUE.QUEUE_ADD);
-            if(result == 1) setState(() {
-              TtsState.playing;
-            });
-            else{
+          stopIsClicked = false;
+          for (var i = 0; i < paragraphList.length; i++) {
+            var result =
+                flutterTts.speak(paragraphList[i], queue: QUEUE.QUEUE_ADD);
+            if (result == 1)
+              setState(() {
+                TtsState.playing;
+              });
+            else {
               TtsState.stopped;
             }
           }
-
         }
+
         /// this is the logic when tts starts from beginning first time when play is clicked
         else {
-          newParaFromIndex = _newVoiceText.indexOf(ttsIsAtWord ?? "") ;
-        for ( var i = 0; i < paragraphList.length; i++) {
-          var result =  flutterTts.speak(paragraphList[i],queue: QUEUE.QUEUE_ADD);
-          if(result == 1) setState(() {
-            TtsState.playing;
-          });
-          else{
-            TtsState.stopped;
+          newParaFromIndex = _newVoiceText.indexOf(ttsIsAtWord ?? "");
+          stopIsClicked = false;
+          for (var i = 0; i < paragraphList.length; i++) {
+            var result =
+                flutterTts.speak(paragraphList[i], queue: QUEUE.QUEUE_ADD);
+            if (result == 1)
+              setState(() {
+                TtsState.playing;
+              });
+            else {
+              TtsState.stopped;
+            }
           }
         }
-      }}
+      }
     }
   }
 
   Future _pause() async {
-
     var result = await flutterTts.stop();
     flutterTts.stop();
     if (result == 1) setState(() => ttsState = TtsState.stopped);
   }
 
   Future _stop() async {
+
+   stopIsClicked = true;
     var result = await flutterTts.stop();
+    _newVoiceText = getArticle();
+    paragraphList = _newVoiceText.split(".");
     if (result == 1) setState(() => ttsState = TtsState.stopped);
   }
-
 
   @override
   void dispose() {
@@ -217,8 +229,6 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -236,14 +246,15 @@ class _MyAppState extends State<MyApp> {
                 ]))));
   }
 
-
   Widget btnSection() => Container(
       padding: EdgeInsets.only(top: 50.0),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-
         _buildButtonColumn(
-            Colors.green, Colors.greenAccent, (isPlaying as bool )? Icons.pause : Icons.play_circle_filled, (isPlaying as bool)  ? 'PAUSE' : 'PLAY ' ,
-            (isPlaying as bool)  ? _pause : _speak),
+            Colors.green,
+            Colors.greenAccent,
+            (isPlaying as bool) ? Icons.pause : Icons.play_circle_filled,
+            (isPlaying as bool) ? 'PAUSE' : 'PLAY ',
+            (isPlaying as bool) ? _pause : _speak),
         _buildButtonColumn(
             Colors.red, Colors.redAccent, Icons.stop, 'STOP', _stop)
       ]));
@@ -364,4 +375,3 @@ open class vehicle{
        """;
   }
 }
-
