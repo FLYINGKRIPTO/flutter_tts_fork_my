@@ -31,6 +31,7 @@ class _MyAppState extends State<MyApp> {
 
   String _platformVersion = 'Unknown';
   final String _newVoiceText = getArticle();
+  int newParaFromIndex;
 
   TtsState ttsState = TtsState.stopped;
 
@@ -54,6 +55,7 @@ class _MyAppState extends State<MyApp> {
     flutterTts = FlutterTts();
 
     paragraphList = _newVoiceText.split(".");
+
     paragraphListLength = paragraphList.length;
     debugPrint('PARAGRAPH LIST LENGTH -> $paragraphListLength');
 
@@ -113,11 +115,29 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future _speak() async {
-    debugPrint(' TTS SPEAK $ttsIsAtWord $ttsIsAtIndexStart $ttsIsAtIndexEnd $current_paragraph');
+    debugPrint(' TTS SPEAK $ttsIsAtWord $ttsIsAtIndexStart $ttsIsAtIndexEnd $newParaFromIndex ');
     if (_newVoiceText != null) {
       if (_newVoiceText.isNotEmpty) {
-        for (int i = 0; i < paragraphList.length; i++) {
-          current_paragraph == i;
+        /// this logic will work when pause is clicked and again play is clicked
+        if(ttsIsAtWord != null && ttsIsAtIndexStart != null && ttsIsAtIndexEnd != null){
+          newParaFromIndex = _newVoiceText.indexOf(ttsIsAtWord ?? "");
+          debugPrint('$newParaFromIndex');
+          paragraphList = _newVoiceText.substring(newParaFromIndex).split(".");
+          for ( var i = 0; i < paragraphList.length; i++) {
+            var result =  flutterTts.speak(paragraphList[i],queue: QUEUE.QUEUE_ADD);
+            if(result == 1) setState(() {
+              TtsState.playing;
+            });
+            else{
+              TtsState.stopped;
+            }
+          }
+
+        }
+        /// this is the logic when tts starts from beginning first time when play is clicked
+        else {
+          newParaFromIndex = _newVoiceText.indexOf(ttsIsAtWord ?? "") ;
+        for ( var i = 0; i < paragraphList.length; i++) {
           var result =  flutterTts.speak(paragraphList[i],queue: QUEUE.QUEUE_ADD);
           if(result == 1) setState(() {
             TtsState.playing;
@@ -126,7 +146,7 @@ class _MyAppState extends State<MyApp> {
             TtsState.stopped;
           }
         }
-      }
+      }}
     }
   }
 
@@ -135,11 +155,6 @@ class _MyAppState extends State<MyApp> {
     var result = await flutterTts.stop();
     flutterTts.stop();
     if (result == 1) setState(() => ttsState = TtsState.stopped);
-    debugPrint('Current Paragraph $current_paragraph');
-  }
-
-  Future _resume() async {
-
   }
 
   Future _stop() async {
