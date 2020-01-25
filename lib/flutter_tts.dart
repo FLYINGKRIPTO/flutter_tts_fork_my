@@ -26,7 +26,7 @@ class FlutterTts {
 
   /// [Future] which invokes the platform specific method for speaking
   Future<dynamic> speak(String text, {QUEUE queue = QUEUE.QUEUE_FLUSH}) =>
-      _channel.invokeMapMethod('speak', {"text": text, "queue": queue.index});
+      _channel.invokeMethod('speak', {"text": text, "queue": queue.index});
 
   Future<dynamic> playSilence(double duration,
       {QUEUE queue = QUEUE.QUEUE_ADD}) =>
@@ -37,8 +37,6 @@ class FlutterTts {
   Future<dynamic> setLanguage(String language) =>
       _channel.invokeMethod('setLanguage', language);
 
-  Future<dynamic> setOnUtteranceProgressListener() =>
-      _channel.invokeMapMethod('setOnUtteranceProgressListener');
 
   /// [Future] which invokes the platform specific method for setSpeechRate
   /// Allowed values are in the range from 0.0 (silent) to 1.0 (loudest)

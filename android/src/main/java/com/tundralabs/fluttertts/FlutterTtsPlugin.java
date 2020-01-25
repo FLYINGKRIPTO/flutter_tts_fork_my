@@ -80,12 +80,14 @@ public class FlutterTtsPlugin implements MethodCallHandler {
                     data.put("word", words.substring(startAt, endAt));
                     invokeMethod("speak.onProgress", data);
                 }
+
                 // only valid on android 26 and higher
                 @Override
                 public void onRangeStart(String utteranceId, int startAt, int endAt, int frame) {
                     super.onRangeStart(utteranceId, startAt, endAt, frame);
                     this.triggerProgress(utteranceId, startAt, endAt);
                 }
+
                 @Override
                 @Deprecated
                 public void onError(String utteranceId) {

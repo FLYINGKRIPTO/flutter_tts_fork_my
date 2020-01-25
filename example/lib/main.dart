@@ -21,13 +21,16 @@ class _MyAppState extends State<MyApp> {
   String voice;
   int silencems;
   int current_paragraph;
+  String ttsIsAtWord;
+  int ttsIsAtIndexStart;
+  int ttsIsAtIndexEnd;
 
   List<String> paragraphList;
   int paragraphCount = 0;
   int paragraphListLength = 0;
 
   String _platformVersion = 'Unknown';
-  String _newVoiceText = getArticle();
+  final String _newVoiceText = getArticle();
 
   TtsState ttsState = TtsState.stopped;
 
@@ -88,7 +91,10 @@ class _MyAppState extends State<MyApp> {
       setState(() {
         _platformVersion = word;
       });
-      print('PROGRESS: $word => $start - $end');
+      ttsIsAtWord = word;
+      ttsIsAtIndexStart = start;
+      ttsIsAtIndexEnd = end;
+    //  print('PROGRESS: $word => $start - $end');
     });
   }
 
@@ -107,12 +113,11 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future _speak() async {
+    debugPrint(' TTS SPEAK $ttsIsAtWord $ttsIsAtIndexStart $ttsIsAtIndexEnd $current_paragraph');
     if (_newVoiceText != null) {
       if (_newVoiceText.isNotEmpty) {
-//        flutterTts.setOnUtteranceProgressListener();
         for (int i = 0; i < paragraphList.length; i++) {
           current_paragraph == i;
-          debugPrint('current paragraph $current_paragraph');
           var result =  flutterTts.speak(paragraphList[i],queue: QUEUE.QUEUE_ADD);
           if(result == 1) setState(() {
             TtsState.playing;
@@ -126,21 +131,22 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future _pause() async {
+
     var result = await flutterTts.stop();
-//    flutterTts.playSilence(100, queue: QUEUE.QUEUE_ADD);
     flutterTts.stop();
     if (result == 1) setState(() => ttsState = TtsState.stopped);
     debugPrint('Current Paragraph $current_paragraph');
   }
 
   Future _resume() async {
-    _speak();
+
   }
 
   Future _stop() async {
     var result = await flutterTts.stop();
     if (result == 1) setState(() => ttsState = TtsState.stopped);
   }
+
 
   @override
   void dispose() {
